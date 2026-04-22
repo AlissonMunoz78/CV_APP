@@ -1,164 +1,185 @@
-import React, { useEffect } from "react";
-import { View, StyleSheet, Alert, ScrollView, Text, Image } from "react-native";
+import { useForm } from "@tanstack/react-form";
 import { useRouter } from "expo-router";
-import { useForm, Controller } from "react-hook-form";
+import React from "react";
+import {
+    Alert,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+} from "react-native";
 import { InputField } from "../components/InputField";
 import { NavigationButton } from "../components/NavigationButton";
 import { useCVContext } from "../context/CVContext";
+import {
+    sanitizeLocation,
+    sanitizeName,
+    sanitizePhone,
+    validateEmail,
+    validateFullName,
+    validateLocation,
+    validatePhone,
+} from "../src/utils/formValidators";
 import { PersonalInfo } from "../types/cv.types";
+
+// PUNTO 3: Formularios migrados a TanStack Form con validaciones en pantalla.
 
 export default function PersonalInfoScreen() {
   const router = useRouter();
   const { cvData, updatePersonalInfo } = useCVContext();
 
-  const {
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<PersonalInfo>({ defaultValues: cvData.personalInfo });
-
-  useEffect(() => {
-    reset(cvData.personalInfo);
-  }, [cvData.personalInfo]);
-
-  const onSubmit = (data: PersonalInfo) => {
-    updatePersonalInfo(data);
-    Alert.alert("Éxito", "Información guardada correctamente", [
-      { text: "OK", onPress: () => router.back() },
-    ]);
-  };
+  const form = useForm({
+    defaultValues: cvData.personalInfo,
+    onSubmit: async ({ value }) => {
+      updatePersonalInfo(value as PersonalInfo);
+      Alert.alert("Exito", "Informacion guardada correctamente", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    },
+  });
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.banner}>
-        <Image
-          source={require("../assets/images/sello.png")}
-          style={styles.bannerLogo}
-          resizeMode="contain"
-        />
-        <Text style={styles.bannerText}>Información Personal</Text>
-        <Image
-          source={require("../assets/images/buhoepn.png")}
-          style={styles.bannerBuho}
-          resizeMode="contain"
-        />
-      </View>
-      <View style={styles.redStrip} />
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView
+        style={styles.container}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={styles.banner}>
+          <Image
+            source={require("../assets/images/sello.png")}
+            style={styles.bannerLogo}
+            resizeMode="contain"
+          />
+          <Text style={styles.bannerText}>Información Personal</Text>
+          <Image
+            source={require("../assets/images/buhoepn.png")}
+            style={styles.bannerBuho}
+            resizeMode="contain"
+          />
+        </View>
+        <View style={styles.redStrip} />
 
-      <View style={styles.content}>
-        <Controller
-          control={control}
-          name="fullName"
-          rules={{
-            required: "El nombre completo es obligatorio",
-            minLength: { value: 3, message: "Mínimo 3 caracteres" },
-            pattern: {
-              value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
-              message: "Solo se permiten letras",
-            },
-          }}
-          render={({ field: { onChange, onBlur, value } }) => (
-            <InputField
-              label="Nombre Completo *"
-              placeholder="Juan Pérez"
-              value={value}
-              onChangeText={(text) =>
-                onChange(text.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ""))
-              }
-              onBlur={onBlur}
-              error={errors.fullName?.message}
-            />
-          )}
-        />
+        <View style={styles.content}>
+          <form.Field
+            name="fullName"
+            validators={{
+              onSubmit: ({ value }) => validateFullName(value),
+            }}
+          >
+            {(field) => (
+              <InputField
+                label="Nombre Completo *"
+                placeholder="Juan Perez"
+                value={field.state.value}
+                onChangeText={(text) => field.handleChange(sanitizeName(text))}
+                onBlur={field.handleBlur}
+                error={field.state.meta.errors[0]}
+              />
+            )}
+          </form.Field>
 
-        <Controller
-          control={control}
-          name="email"
-          rules={{
-            required: "El email es obligatorio",
-            pattern: {
-              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-              message: "Ingresa un email válido",
-            },
-          }}
-          render={({ field: { onChange, onBlur, value } }) => (
-            <InputField
-              label="Email *"
-              placeholder="juan@epn.edu.ec"
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              error={errors.email?.message}
-            />
-          )}
-        />
+          <form.Field
+            name="email"
+            validators={{
+              onSubmit: ({ value }) => validateEmail(value),
+            }}
+          >
+            {(field) => (
+              <InputField
+                label="Email *"
+                placeholder="juan@epn.edu.ec"
+                value={field.state.value}
+                onChangeText={field.handleChange}
+                onBlur={field.handleBlur}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                error={field.state.meta.errors[0]}
+              />
+            )}
+          </form.Field>
 
-        <Controller
-          control={control}
-          name="phone"
-          rules={{
-            pattern: {
-              value: /^[+]?[\d\s\-()]{7,15}$/,
-              message: "Formato inválido. Ej: +593 99 999 9999",
-            },
-          }}
-          render={({ field: { onChange, onBlur, value } }) => (
-            <InputField
-              label="Teléfono"
-              placeholder="+593 99 999 9999"
-              value={value}
-              onChangeText={(text) =>
-                onChange(text.replace(/[^\d\s\-()+]/g, ""))
-              }
-              onBlur={onBlur}
-              keyboardType="phone-pad"
-              error={errors.phone?.message}
-            />
-          )}
-        />
+          <form.Field
+            name="phone"
+            validators={{
+              onSubmit: ({ value }) => validatePhone(value),
+            }}
+          >
+            {(field) => (
+              <InputField
+                label="Telefono"
+                placeholder="+593 99 999 9999"
+                value={field.state.value}
+                onChangeText={(text) => field.handleChange(sanitizePhone(text))}
+                onBlur={field.handleBlur}
+                keyboardType="phone-pad"
+                error={field.state.meta.errors[0]}
+              />
+            )}
+          </form.Field>
 
-        <Controller
-          control={control}
-          name="location"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <InputField
-              label="Ubicación"
-              placeholder="Quito, Ecuador"
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-            />
-          )}
-        />
+          <form.Field
+            name="location"
+            validators={{
+              onSubmit: ({ value }) => validateLocation(value),
+            }}
+          >
+            {(field) => (
+              <InputField
+                label="Ubicacion *"
+                placeholder="Quito, Ecuador"
+                value={field.state.value}
+                onChangeText={(text) =>
+                  field.handleChange(sanitizeLocation(text))
+                }
+                onBlur={field.handleBlur}
+                error={field.state.meta.errors[0]}
+              />
+            )}
+          </form.Field>
 
-        <Controller
-          control={control}
-          name="summary"
-          rules={{
-            maxLength: { value: 500, message: "Máximo 500 caracteres" },
-          }}
-          render={({ field: { onChange, onBlur, value } }) => (
-            <InputField
-              label="Resumen Profesional"
-              placeholder="Breve descripción de tu perfil..."
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              multiline
-              numberOfLines={4}
-              style={{ height: 100, textAlignVertical: "top" }}
-              error={errors.summary?.message}
-            />
-          )}
-        />
+          <form.Field
+            name="summary"
+            validators={{
+              onSubmit: ({ value }) => {
+                if (value && value.length > 500) return "Maximo 500 caracteres";
+                return undefined;
+              },
+            }}
+          >
+            {(field) => (
+              <InputField
+                label="Resumen Profesional"
+                placeholder="Breve descripcion de tu perfil..."
+                value={field.state.value}
+                onChangeText={field.handleChange}
+                onBlur={field.handleBlur}
+                multiline
+                numberOfLines={4}
+                style={{ height: 100, textAlignVertical: "top" }}
+                error={field.state.meta.errors[0]}
+              />
+            )}
+          </form.Field>
 
-        <NavigationButton title="Guardar Información" onPress={handleSubmit(onSubmit)} />
-        <NavigationButton title="Cancelar" onPress={() => router.back()} variant="secondary" />
-      </View>
-    </ScrollView>
+          <NavigationButton
+            title="Guardar Informacion"
+            onPress={() => form.handleSubmit()}
+          />
+          <NavigationButton
+            title="Cancelar"
+            onPress={() => router.back()}
+            variant="secondary"
+          />
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -177,4 +198,5 @@ const styles = StyleSheet.create({
   bannerText: { flex: 1, color: "#fff", fontSize: 16, fontWeight: "bold" },
   redStrip: { height: 4, backgroundColor: "#c8102e" },
   content: { padding: 20 },
+  scrollContent: { paddingBottom: 32 },
 });

@@ -1,149 +1,236 @@
+import { useForm } from "@tanstack/react-form";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity, Image,
+    Alert,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
-import { useRouter } from "expo-router";
-import { InputField } from "../components/InputField";
 import { DatePickerField } from "../components/DatePickerField";
+import { InputField } from "../components/InputField";
 import { NavigationButton } from "../components/NavigationButton";
 import { useCVContext } from "../context/CVContext";
 import { Experience } from "../types/cv.types";
 
+// PUNTO 3: Experiencia usa TanStack Form (sin React Hook Form) y valida campos obligatorios.
+
 export default function ExperienceScreen() {
   const router = useRouter();
   const { cvData, addExperience, deleteExperience } = useCVContext();
-
-  const [formData, setFormData] = useState<Omit<Experience, "id">>({
-    company: "", position: "", startDate: "", endDate: "", description: "",
-  });
   const [isCurrentJob, setIsCurrentJob] = useState(false);
 
-  const handleAdd = () => {
-    if (!formData.company || !formData.position || !formData.startDate) {
-      Alert.alert("Error", "Completa al menos empresa, cargo y fecha de inicio");
-      return;
-    }
-    addExperience({
-      id: Date.now().toString(),
-      ...formData,
-      endDate: isCurrentJob ? "Actual" : formData.endDate,
-    });
-    setFormData({ company: "", position: "", startDate: "", endDate: "", description: "" });
-    setIsCurrentJob(false);
-    Alert.alert("Éxito", "Experiencia agregada correctamente");
-  };
+  const form = useForm({
+    defaultValues: {
+      company: "",
+      position: "",
+      startDate: "",
+      endDate: "",
+      description: "",
+    },
+    onSubmit: async ({ value }) => {
+      addExperience({
+        id: Date.now().toString(),
+        ...(value as Omit<Experience, "id">),
+        endDate: isCurrentJob ? "Actual" : value.endDate,
+      });
+
+      form.reset();
+      setIsCurrentJob(false);
+      Alert.alert("Exito", "Experiencia agregada correctamente");
+    },
+  });
 
   const handleDelete = (id: string) => {
     Alert.alert("Confirmar", "¿Eliminar esta experiencia?", [
       { text: "Cancelar", style: "cancel" },
-      { text: "Eliminar", style: "destructive", onPress: () => deleteExperience(id) },
+      {
+        text: "Eliminar",
+        style: "destructive",
+        onPress: () => deleteExperience(id),
+      },
     ]);
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.banner}>
-        <Image
-          source={require("../assets/images/sello.png")}
-          style={styles.bannerLogo}
-          resizeMode="contain"
-        />
-        <Text style={styles.bannerText}>Experiencia Laboral</Text>
-        <Image
-          source={require("../assets/images/buhoepn.png")}
-          style={styles.bannerBuho}
-          resizeMode="contain"
-        />
-      </View>
-      <View style={styles.redStrip} />
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView
+        style={styles.container}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={styles.banner}>
+          <Image
+            source={require("../assets/images/sello.png")}
+            style={styles.bannerLogo}
+            resizeMode="contain"
+          />
+          <Text style={styles.bannerText}>Experiencia Laboral</Text>
+          <Image
+            source={require("../assets/images/buhoepn.png")}
+            style={styles.bannerBuho}
+            resizeMode="contain"
+          />
+        </View>
+        <View style={styles.redStrip} />
 
-      <View style={styles.content}>
-        <Text style={styles.sectionTitle}>Agregar Nueva Experiencia</Text>
+        <View style={styles.content}>
+          <Text style={styles.sectionTitle}>Agregar Nueva Experiencia</Text>
 
-        <InputField
-          label="Empresa *"
-          placeholder="Nombre de la empresa"
-          value={formData.company}
-          onChangeText={(text) =>
-            setFormData({ ...formData, company: text.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]/g, "") })
-          }
-        />
+          <form.Field
+            name="company"
+            validators={{
+              onSubmit: ({ value }) => {
+                if (!value || !value.trim()) return "La empresa es obligatoria";
+                return undefined;
+              },
+            }}
+          >
+            {(field) => (
+              <InputField
+                label="Empresa *"
+                placeholder="Nombre de la empresa"
+                value={field.state.value}
+                onChangeText={(text) =>
+                  field.handleChange(
+                    text.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]/g, ""),
+                  )
+                }
+                onBlur={field.handleBlur}
+                error={field.state.meta.errors[0]}
+              />
+            )}
+          </form.Field>
 
-        <InputField
-          label="Cargo *"
-          placeholder="Tu posición"
-          value={formData.position}
-          onChangeText={(text) =>
-            setFormData({ ...formData, position: text.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "") })
-          }
-        />
+          <form.Field
+            name="position"
+            validators={{
+              onSubmit: ({ value }) => {
+                if (!value || !value.trim()) return "El cargo es obligatorio";
+                return undefined;
+              },
+            }}
+          >
+            {(field) => (
+              <InputField
+                label="Cargo *"
+                placeholder="Tu posición"
+                value={field.state.value}
+                onChangeText={(text) =>
+                  field.handleChange(
+                    text.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ""),
+                  )
+                }
+                onBlur={field.handleBlur}
+                error={field.state.meta.errors[0]}
+              />
+            )}
+          </form.Field>
 
-        <DatePickerField
-          label="Fecha de Inicio *"
-          value={formData.startDate}
-          onChange={(date) => setFormData({ ...formData, startDate: date })}
-        />
+          <form.Field
+            name="startDate"
+            validators={{
+              onSubmit: ({ value }) => {
+                if (!value) return "La fecha de inicio es obligatoria";
+                return undefined;
+              },
+            }}
+          >
+            {(field) => (
+              <DatePickerField
+                label="Fecha de Inicio *"
+                value={field.state.value}
+                onChange={field.handleChange}
+                error={field.state.meta.errors[0]}
+              />
+            )}
+          </form.Field>
 
-        <TouchableOpacity
-          style={styles.checkboxRow}
-          onPress={() => {
-            setIsCurrentJob(!isCurrentJob);
-            if (!isCurrentJob) setFormData({ ...formData, endDate: "" });
-          }}
-        >
-          <View style={[styles.checkbox, isCurrentJob && styles.checkboxChecked]}>
-            {isCurrentJob && <Text style={styles.checkmark}>✓</Text>}
-          </View>
-          <Text style={styles.checkboxLabel}>Trabajo actual</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.checkboxRow}
+            onPress={() => {
+              setIsCurrentJob(!isCurrentJob);
+            }}
+          >
+            <View
+              style={[styles.checkbox, isCurrentJob && styles.checkboxChecked]}
+            >
+              {isCurrentJob && <Text style={styles.checkmark}>✓</Text>}
+            </View>
+            <Text style={styles.checkboxLabel}>Trabajo actual</Text>
+          </TouchableOpacity>
 
-        <DatePickerField
-          label="Fecha de Fin"
-          value={formData.endDate}
-          onChange={(date) => setFormData({ ...formData, endDate: date })}
-          disabled={isCurrentJob}
-        />
+          <form.Field name="endDate">
+            {(field) => (
+              <DatePickerField
+                label="Fecha de Fin"
+                value={field.state.value}
+                onChange={field.handleChange}
+                disabled={isCurrentJob}
+              />
+            )}
+          </form.Field>
 
-        <InputField
-          label="Descripción"
-          placeholder="Describe tus responsabilidades..."
-          value={formData.description}
-          onChangeText={(text) => setFormData({ ...formData, description: text })}
-          multiline
-          numberOfLines={4}
-          style={{ height: 100, textAlignVertical: "top" }}
-        />
+          <form.Field name="description">
+            {(field) => (
+              <InputField
+                label="Descripción"
+                placeholder="Describe tus responsabilidades..."
+                value={field.state.value}
+                onChangeText={field.handleChange}
+                onBlur={field.handleBlur}
+                multiline
+                numberOfLines={4}
+                style={{ height: 100, textAlignVertical: "top" }}
+              />
+            )}
+          </form.Field>
 
-        <NavigationButton title="Agregar Experiencia" onPress={handleAdd} />
+          <NavigationButton
+            title="Agregar Experiencia"
+            onPress={() => form.handleSubmit()}
+          />
 
-        {cvData.experiences.length > 0 && (
-          <>
-            <Text style={styles.listTitle}>Experiencias Agregadas</Text>
-            {cvData.experiences.map((exp) => (
-              <View key={exp.id} style={styles.card}>
-                <View style={styles.cardContent}>
-                  <Text style={styles.cardTitle}>{exp.position}</Text>
-                  <Text style={styles.cardSubtitle}>{exp.company}</Text>
-                  <Text style={styles.cardDate}>
-                    {exp.startDate} - {exp.endDate || "Actual"}
-                  </Text>
+          {cvData.experiences.length > 0 && (
+            <>
+              <Text style={styles.listTitle}>Experiencias Agregadas</Text>
+              {cvData.experiences.map((exp) => (
+                <View key={exp.id} style={styles.card}>
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardTitle}>{exp.position}</Text>
+                    <Text style={styles.cardSubtitle}>{exp.company}</Text>
+                    <Text style={styles.cardDate}>
+                      {exp.startDate} - {exp.endDate || "Actual"}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => handleDelete(exp.id)}
+                  >
+                    <Text style={styles.deleteButtonText}>✕</Text>
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(exp.id)}>
-                  <Text style={styles.deleteButtonText}>✕</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </>
-        )}
+              ))}
+            </>
+          )}
 
-        <NavigationButton
-          title="Volver"
-          onPress={() => router.back()}
-          variant="secondary"
-          style={{ marginTop: 16 }}
-        />
-      </View>
-    </ScrollView>
+          <NavigationButton
+            title="Volver"
+            onPress={() => router.back()}
+            variant="secondary"
+            style={{ marginTop: 16 }}
+          />
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -162,8 +249,20 @@ const styles = StyleSheet.create({
   bannerText: { flex: 1, color: "#fff", fontSize: 16, fontWeight: "bold" },
   redStrip: { height: 4, backgroundColor: "#c8102e" },
   content: { padding: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#0a2d6e", marginBottom: 16 },
-  listTitle: { fontSize: 16, fontWeight: "600", color: "#0a2d6e", marginTop: 24, marginBottom: 12 },
+  scrollContent: { paddingBottom: 32 },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#0a2d6e",
+    marginBottom: 16,
+  },
+  listTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#0a2d6e",
+    marginTop: 24,
+    marginBottom: 12,
+  },
   card: {
     backgroundColor: "#fff",
     borderRadius: 10,
@@ -175,19 +274,33 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardContent: { flex: 1 },
-  cardTitle: { fontSize: 15, fontWeight: "600", color: "#0a2d6e", marginBottom: 4 },
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#0a2d6e",
+    marginBottom: 4,
+  },
   cardSubtitle: { fontSize: 13, color: "#7f8c8d", marginBottom: 4 },
   cardDate: { fontSize: 12, color: "#95a5a6" },
   deleteButton: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: "#c8102e", justifyContent: "center", alignItems: "center",
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#c8102e",
+    justifyContent: "center",
+    alignItems: "center",
   },
   deleteButtonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
   checkboxRow: { flexDirection: "row", alignItems: "center", marginBottom: 16 },
   checkbox: {
-    width: 22, height: 22, borderWidth: 2,
-    borderColor: "#0a2d6e", borderRadius: 4,
-    marginRight: 10, justifyContent: "center", alignItems: "center",
+    width: 22,
+    height: 22,
+    borderWidth: 2,
+    borderColor: "#0a2d6e",
+    borderRadius: 4,
+    marginRight: 10,
+    justifyContent: "center",
+    alignItems: "center",
   },
   checkboxChecked: { backgroundColor: "#0a2d6e" },
   checkmark: { color: "#fff", fontSize: 14, fontWeight: "bold" },
