@@ -7,13 +7,17 @@ import { buildCvHtml, generateAndShareCVPdf } from "./pdf";
 
 // Mock de expo-print para simular la generación de PDF sin usar el dispositivo real
 jest.mock("expo-print", () => ({
-  printToFileAsync: jest.fn().mockResolvedValue({ uri: "file:///tmp/cv.pdf" }),
+  printToFileAsync: jest
+    .fn<() => Promise<{ uri: string }>>()
+    .mockResolvedValue({ uri: "file:///tmp/cv.pdf" }),
 }));
 
 // Mock de expo-sharing para evitar compartir realmente el archivo
 jest.mock("expo-sharing", () => ({
-  isAvailableAsync: jest.fn().mockResolvedValue(false),
-  shareAsync: jest.fn(),
+  isAvailableAsync: jest.fn<() => Promise<boolean>>().mockResolvedValue(false),
+  shareAsync: jest
+    .fn<(uri: string, options?: unknown) => Promise<void>>()
+    .mockResolvedValue(undefined),
 }));
 
 describe("PDF utilities", () => {
