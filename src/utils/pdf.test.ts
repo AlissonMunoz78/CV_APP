@@ -1,19 +1,23 @@
+import { describe, expect, it, jest } from "@jest/globals";
 import * as Print from "expo-print";
 import { CVData } from "../../types/cv.types";
 import { buildCvHtml, generateAndShareCVPdf } from "./pdf";
 
 // PUNTO 5: Test unitario para validar que el HTML/PDF contiene secciones esperadas.
 
+// Mock de expo-print para simular la generación de PDF sin usar el dispositivo real
 jest.mock("expo-print", () => ({
   printToFileAsync: jest.fn().mockResolvedValue({ uri: "file:///tmp/cv.pdf" }),
 }));
 
+// Mock de expo-sharing para evitar compartir realmente el archivo
 jest.mock("expo-sharing", () => ({
   isAvailableAsync: jest.fn().mockResolvedValue(false),
   shareAsync: jest.fn(),
 }));
 
 describe("PDF utilities", () => {
+  // Datos de prueba simulados (mock del CV)
   const cvData: CVData = {
     personalInfo: {
       fullName: "Ana Perez",
@@ -30,21 +34,27 @@ describe("PDF utilities", () => {
     ],
   };
 
+  // Test 1: Verifica que el HTML generado contiene información clave
   it("buildCvHtml incluye nombre y habilidades", () => {
     const html = buildCvHtml(cvData);
 
+    // Validamos que el HTML tenga datos importantes del CV
     expect(html).toContain("Ana Perez");
     expect(html).toContain("Habilidades");
     expect(html).toContain("React Native");
     expect(html).toContain("TypeScript");
   });
 
+  // Test 2: Verifica que se genera el PDF correctamente
   it("generateAndShareCVPdf usa expo-print con html dinamico", async () => {
     const uri = await generateAndShareCVPdf(cvData);
 
+    // Verifica que se llamó a expo-print con HTML que contiene el nombre
     expect(Print.printToFileAsync).toHaveBeenCalledWith(
       expect.objectContaining({ html: expect.stringContaining("Ana Perez") }),
     );
+
+    // Verifica que retorna la ruta del PDF generado
     expect(uri).toBe("file:///tmp/cv.pdf");
   });
 });
