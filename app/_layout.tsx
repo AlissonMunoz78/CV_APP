@@ -17,14 +17,15 @@ export default function RootLayout() {
         />
         <Stack.Screen
           name="personal-info"
-          options={{ title: "Información Personal" }}
+          options={{ title: "Informaci3n Personal" }}
         />
         <Stack.Screen
           name="experience"
           options={{ title: "Experiencia Laboral" }}
         />
-        <Stack.Screen name="education" options={{ title: "Educación" }} />
+        <Stack.Screen name="education" options={{ title: "Educaci3n" }} />
         <Stack.Screen name="skills" options={{ title: "Habilidades" }} />
+        <Stack.Screen name="photo" options={{ title: "Foto de Perfil" }} />
         <Stack.Screen
           name="preview"
           options={{ title: "Vista Previa CV", presentation: "modal" }}

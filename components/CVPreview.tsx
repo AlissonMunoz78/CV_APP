@@ -1,3 +1,6 @@
+// components/CVPreview.tsx
+
+import { MaterialIcons } from '@expo/vector-icons';
 import React from "react";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { CVData } from "../types/cv.types";
@@ -6,63 +9,52 @@ interface CVPreviewProps {
   cvData: CVData;
 }
 
-export const CVPreview: React.FC<CVPreviewProps> = ({ cvData }) => {
-  const { personalInfo, experiences, education, skills } = cvData;
+export const CVPreview = ({ cvData }: CVPreviewProps) => {
+  const { personalInfo, experiences, education } = cvData;
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.epnHeader}>
-        <Image
-          source={require("../assets/images/sello.png")}
-          style={styles.sello}
-          resizeMode="contain"
-        />
-        <View style={styles.epnHeaderText}>
-          <Text style={styles.epnTitle}>Escuela Politécnica Nacional</Text>
-          <Text style={styles.epnSub}>Currículum Vitae</Text>
-        </View>
-        <Image
-          source={require("../assets/images/buhoepn.png")}
-          style={styles.buho}
-          resizeMode="contain"
-        />
-      </View>
-      <View style={styles.redStrip} />
-
       <View style={styles.content}>
-        <View style={styles.nameSection}>
-          <Text style={styles.name}>
-            {personalInfo.fullName || "Tu Nombre"}
-          </Text>
-          <View style={styles.contactRow}>
+        {/* Header con foto */}
+        <View style={styles.header}>
+          {personalInfo.profileImage && (
+            <Image
+              source={{ uri: personalInfo.profileImage }}
+              style={styles.profileImage}
+            />
+          )}
+          <View style={styles.headerText}>
+            <Text style={styles.name}>{personalInfo.fullName || "Nombre"}</Text>
             {personalInfo.email && (
-              <Text style={styles.contactText}>📧 {personalInfo.email}</Text>
+              <Text style={styles.contact}>
+                <MaterialIcons name="email" size={16} color="#0a2d6e" /> {personalInfo.email}
+              </Text>
             )}
             {personalInfo.phone && (
-              <Text style={styles.contactText}>📱 {personalInfo.phone}</Text>
+              <Text style={styles.contact}>
+                <MaterialIcons name="phone" size={16} color="#0a2d6e" /> {personalInfo.phone}
+              </Text>
             )}
             {personalInfo.location && (
-              <Text style={styles.contactText}>📍 {personalInfo.location}</Text>
+              <Text style={styles.contact}>
+                <MaterialIcons name="location-on" size={16} color="#0a2d6e" /> {personalInfo.location}
+              </Text>
             )}
           </View>
         </View>
 
+        {/* Resumen */}
         {personalInfo.summary && (
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionAccent} />
-              <Text style={styles.sectionTitle}>RESUMEN PROFESIONAL</Text>
-            </View>
-            <Text style={styles.summaryText}>{personalInfo.summary}</Text>
+            <Text style={styles.sectionTitle}>Resumen Profesional</Text>
+            <Text style={styles.text}>{personalInfo.summary}</Text>
           </View>
         )}
 
+        {/* Experiencia */}
         {experiences.length > 0 && (
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionAccent} />
-              <Text style={styles.sectionTitle}>EXPERIENCIA LABORAL</Text>
-            </View>
+            <Text style={styles.sectionTitle}>Experiencia Laboral</Text>
             {experiences.map((exp) => (
               <View key={exp.id} style={styles.item}>
                 <Text style={styles.itemTitle}>{exp.position}</Text>
@@ -78,142 +70,102 @@ export const CVPreview: React.FC<CVPreviewProps> = ({ cvData }) => {
           </View>
         )}
 
+        {/* Educación */}
         {education.length > 0 && (
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionAccent} />
-              <Text style={styles.sectionTitle}>EDUCACIÓN</Text>
-            </View>
+            <Text style={styles.sectionTitle}>Educación</Text>
             {education.map((edu) => (
               <View key={edu.id} style={styles.item}>
                 <Text style={styles.itemTitle}>{edu.degree}</Text>
                 {edu.field && (
                   <Text style={styles.itemSubtitle}>{edu.field}</Text>
                 )}
-                <Text style={styles.itemInstitution}>{edu.institution}</Text>
-                {edu.graduationYear && (
-                  <Text style={styles.itemDate}>{edu.graduationYear}</Text>
-                )}
+                <Text style={styles.itemSubtitle}>{edu.institution}</Text>
+                <Text style={styles.itemDate}>{edu.graduationYear}</Text>
               </View>
             ))}
           </View>
         )}
-
-        {skills.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionAccent} />
-              <Text style={styles.sectionTitle}>HABILIDADES</Text>
-            </View>
-            {skills.map((skill) => (
-              <View key={skill.id} style={styles.item}>
-                <Text style={styles.itemTitle}>{skill.name}</Text>
-                <Text style={styles.itemSubtitle}>Nivel: {skill.level}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {!personalInfo.fullName &&
-          experiences.length === 0 &&
-          education.length === 0 &&
-          skills.length === 0 && (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>
-                No hay información para mostrar.{"\n"}Completa las secciones
-                para ver tu CV.
-              </Text>
-            </View>
-          )}
       </View>
     </ScrollView>
   );
 };
 
-export default CVPreview;
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  epnHeader: {
-    backgroundColor: "#0a2d6e",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 10,
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
   },
-  sello: { width: 48, height: 48 },
-  buho: { width: 40, height: 40 },
-  epnHeaderText: { flex: 1 },
-  epnTitle: { color: "#fff", fontSize: 14, fontWeight: "bold" },
-  epnSub: { color: "#a8c4f0", fontSize: 11, marginTop: 2 },
-  redStrip: { height: 4, backgroundColor: "#c8102e" },
-  content: { padding: 20 },
-  nameSection: {
-    borderBottomWidth: 2,
-    borderBottomColor: "#0a2d6e",
-    paddingBottom: 16,
-    marginBottom: 20,
+  content: {
+    padding: 20,
+  },
+  header: {
+    flexDirection: "row",
+    marginBottom: 24,
+    alignItems: "center",
+  },
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginRight: 16,
+    borderWidth: 3,
+    borderColor: "#3498db",
+  },
+  headerText: {
+    flex: 1,
   },
   name: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#0a2d6e",
-    marginBottom: 10,
+    color: "#2c3e50",
+    marginBottom: 8,
   },
-  contactRow: { gap: 4 },
-  contactText: { fontSize: 13, color: "#7f8c8d", marginBottom: 3 },
-  section: { marginBottom: 20 },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
+  contact: {
+    fontSize: 14,
+    color: "#7f8c8d",
+    marginBottom: 4,
   },
-  sectionAccent: {
-    width: 3,
-    height: 16,
-    backgroundColor: "#c8102e",
-    borderRadius: 2,
+  section: {
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#0a2d6e",
-    letterSpacing: 1,
+    color: "#3498db",
+    marginBottom: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: "#3498db",
+    paddingBottom: 4,
   },
-  summaryText: { fontSize: 13, color: "#34495e", lineHeight: 20 },
+  text: {
+    fontSize: 14,
+    color: "#2c3e50",
+    lineHeight: 20,
+  },
   item: {
-    marginBottom: 14,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ecf0f1",
+    marginBottom: 16,
   },
   itemTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "600",
-    color: "#0a2d6e",
-    marginBottom: 3,
+    color: "#2c3e50",
+    marginBottom: 4,
   },
-  itemSubtitle: { fontSize: 13, color: "#7f8c8d", marginBottom: 3 },
-  itemInstitution: { fontSize: 13, color: "#95a5a6", marginBottom: 3 },
+  itemSubtitle: {
+    fontSize: 14,
+    color: "#7f8c8d",
+    marginBottom: 2,
+  },
   itemDate: {
     fontSize: 12,
-    color: "#c8102e",
-    fontStyle: "italic",
-    marginBottom: 6,
-  },
-  itemDescription: { fontSize: 13, color: "#34495e", lineHeight: 18 },
-  emptyState: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 60,
-  },
-  emptyText: {
-    fontSize: 15,
     color: "#95a5a6",
-    textAlign: "center",
-    lineHeight: 24,
+    marginBottom: 4,
+  },
+  itemDescription: {
+    fontSize: 14,
+    color: "#2c3e50",
+    lineHeight: 20,
+    marginTop: 4,
   },
 });

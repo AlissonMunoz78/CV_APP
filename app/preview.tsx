@@ -1,15 +1,33 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Alert, Modal, StyleSheet, Text, View } from "react-native";
 import { WebView } from "react-native-webview";
 import { CVPreview } from "../components/CVPreview";
 import { NavigationButton } from "../components/NavigationButton";
 import { useCVContext } from "../context/CVContext";
-import { buildCvHtml, generateAndShareCVPdf } from "../src/utils/pdf";
+import {
+  buildCvHtmlWithResolvedImage,
+  generateAndShareCVPdf,
+} from "../src/utils/pdf";
 
 export default function PreviewScreen() {
   const { cvData } = useCVContext();
   const [showHtmlPreview, setShowHtmlPreview] = useState(false);
-  const htmlPreview = useMemo(() => buildCvHtml(cvData), [cvData]);
+  const [htmlPreview, setHtmlPreview] = useState("<html><body></body></html>");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    (async () => {
+      const html = await buildCvHtmlWithResolvedImage(cvData);
+      if (isMounted) {
+        setHtmlPreview(html);
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [cvData]);
 
   const handleSharePdf = async () => {
     try {

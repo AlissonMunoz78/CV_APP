@@ -1,14 +1,15 @@
+import { MaterialIcons } from '@expo/vector-icons';
+import DateTimePicker, {
+    DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Platform,
+    Platform,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
-import DateTimePicker, {
-  DateTimePickerEvent,
-} from "@react-native-community/datetimepicker";
 
 interface DatePickerFieldProps {
   label: string;
@@ -66,7 +67,7 @@ export const DatePickerField = ({
         <Text style={[styles.buttonText, !value && styles.placeholder]}>
           {disabled ? "Actual" : value || placeholder}
         </Text>
-        <Text style={styles.icon}>📅</Text>
+        <MaterialIcons name="event" size={18} color="#0a2d6e" style={styles.icon} />
       </TouchableOpacity>
 
       {error && <Text style={styles.errorText}>{error}</Text>}

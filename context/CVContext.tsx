@@ -1,4 +1,5 @@
-import React, { createContext, ReactNode, useContext, useState } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import {
     CVData,
     Education,
@@ -32,11 +33,27 @@ export const CVProvider = ({ children }: { children: ReactNode }) => {
       phone: "",
       location: "",
       summary: "",
+      profileImage: undefined,
     },
     experiences: [],
     education: [],
     skills: [],
   });
+
+  // Cargar datos guardados al iniciar
+  useEffect(() => {
+    (async () => {
+      try {
+        const stored = await AsyncStorage.getItem('cvData');
+        if (stored) setCVData(JSON.parse(stored));
+      } catch (e) { /* ignore */ }
+    })();
+  }, []);
+
+  // Guardar datos en cada cambio
+  useEffect(() => {
+    AsyncStorage.setItem('cvData', JSON.stringify(cvData));
+  }, [cvData]);
 
   const updatePersonalInfo = (info: PersonalInfo) => {
     setCVData((prev) => ({ ...prev, personalInfo: info }));
