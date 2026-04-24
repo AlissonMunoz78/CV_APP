@@ -20,6 +20,22 @@ jest.mock("expo-sharing", () => ({
     .mockResolvedValue(undefined),
 }));
 
+function mockFileConstructor(uri: string) {
+  const file: { uri: string; rename(newName: string): void } = {
+    uri,
+    rename(newName: string) {
+      file.uri = file.uri.replace(/[^/]+$/, newName);
+    },
+  };
+
+  return file;
+}
+
+jest.mock("expo-file-system", () => ({
+  File: mockFileConstructor,
+  readAsStringAsync: jest.fn(),
+}));
+
 describe("PDF utilities", () => {
   // Datos de prueba simulados (mock del CV)
   const cvData: CVData = {
@@ -44,7 +60,8 @@ describe("PDF utilities", () => {
 
     // Validamos que el HTML tenga datos importantes del CV
     expect(html).toContain("Ana Perez");
-    expect(html).toContain("Habilidades");
+    expect(html).toContain("Skills");
+    expect(html).toContain("Profile");
     expect(html).toContain("React Native");
     expect(html).toContain("TypeScript");
   });
@@ -58,7 +75,7 @@ describe("PDF utilities", () => {
       expect.objectContaining({ html: expect.stringContaining("Ana Perez") }),
     );
 
-    // Verifica que retorna la ruta del PDF generado
+    // Verifica que retorna la ruta del PDF generado.
     expect(uri).toBe("file:///tmp/cv.pdf");
   });
 });

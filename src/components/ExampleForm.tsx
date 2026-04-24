@@ -17,7 +17,7 @@ type FormData = {
 };
 
 export default function ExampleForm() {
-  const form = useForm<FormData>({
+  const form = useForm({
     defaultValues: {
       nombre: "",
       email: "",

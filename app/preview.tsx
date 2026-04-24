@@ -1,18 +1,43 @@
+import { CVPreview } from "@/components/CVPreview";
+import { NavigationButton } from "@/components/NavigationButton";
+import { useCVContext } from "@/context/CVContext";
+import {
+    buildCvHtmlWithResolvedImage,
+    generateAndShareCVPdf,
+} from "@/src/utils/pdf";
 import React, { useEffect, useState } from "react";
 import { Alert, Modal, StyleSheet, Text, View } from "react-native";
 import { WebView } from "react-native-webview";
-import { CVPreview } from "../components/CVPreview";
-import { NavigationButton } from "../components/NavigationButton";
-import { useCVContext } from "../context/CVContext";
-import {
-  buildCvHtmlWithResolvedImage,
-  generateAndShareCVPdf,
-} from "../src/utils/pdf";
 
 export default function PreviewScreen() {
   const { cvData } = useCVContext();
   const [showHtmlPreview, setShowHtmlPreview] = useState(false);
   const [htmlPreview, setHtmlPreview] = useState("<html><body></body></html>");
+
+  const getScaledPreviewHtml = (html: string) => {
+    const previewScaleCss = `
+      <style>
+        @media screen {
+          body {
+            margin: 0;
+            overflow: auto;
+          }
+          .page {
+            transform: scale(0.74);
+            transform-origin: top left;
+            width: calc(100% / 0.74);
+            margin-bottom: -300px;
+          }
+        }
+      </style>
+    `;
+
+    if (html.includes("</head>")) {
+      return html.replace("</head>", `${previewScaleCss}</head>`);
+    }
+
+    return `${previewScaleCss}${html}`;
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -20,7 +45,7 @@ export default function PreviewScreen() {
     (async () => {
       const html = await buildCvHtmlWithResolvedImage(cvData);
       if (isMounted) {
-        setHtmlPreview(html);
+        setHtmlPreview(getScaledPreviewHtml(html));
       }
     })();
 
@@ -79,11 +104,11 @@ export default function PreviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { flex: 1, backgroundColor: "#f0f4fa" },
   actions: {
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: "#fff",
+    backgroundColor: "#f0f4fa",
   },
   modalContainer: {
     flex: 1,
